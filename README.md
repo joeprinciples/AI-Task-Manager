@@ -16,6 +16,16 @@ Works with Claude Code, Cursor, Copilot, Windsurf, and any AI that can read/writ
 <sub>Right-click to change status, priority, or remove. Add tasks with the + button.</sub>
 </p>
 
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/3.png" alt="Right-click context menu" width="650" /><br>
+<sub>Right-click any task to change its status, update its priority, or remove it.</sub>
+</p>
+
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/4.png" alt="Markdown file format" width="650" /><br>
+<sub>All task data lives in a single Markdown file per project — easy to read, edit, and version control.</sub>
+</p>
+
 ## How it works
 
 1. **Install** — auto-configures your AI assistant on first launch
