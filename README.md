@@ -11,17 +11,25 @@ Designed to work seamlessly with AI coding assistants — any tool that can read
 - *"Mark the auth task as done and add a new one for writing tests"*
 - *"What's left to do on this project?"*
 
-<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/1.png" alt="Task panel in its own sidebar window" width="650" />
-<br><sub>Tasks appear in a dedicated sidebar panel, giving you an overview of all your projects at a glance.</sub>
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/1.png" alt="Task panel in its own sidebar window" width="650" /><br>
+<sub>Tasks appear in a dedicated sidebar panel, giving you an overview of all your projects at a glance.</sub>
+</p>
 
-<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/2.png" alt="Expanded project task list" width="650" />
-<br><sub>Select a project to expand its full task list — with statuses, priorities, and timestamps.</sub>
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/2.png" alt="Expanded project task list" width="650" /><br>
+<sub>Select a project to expand its full task list — with statuses, priorities, and timestamps.</sub>
+</p>
 
-<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/3.png" alt="Right-click context menu" width="650" />
-<br><sub>Right-click any task to change its status, update its priority, or remove it.</sub>
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/3.png" alt="Right-click context menu" width="650" /><br>
+<sub>Right-click any task to change its status, update its priority, or remove it.</sub>
+</p>
 
-<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/4.png" alt="Markdown file format" width="650" />
-<br><sub>All task data lives in a single Markdown file per project — easy to read, edit, and version control.</sub>
+<p>
+<img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/4.png" alt="Markdown file format" width="650" /><br>
+<sub>All task data lives in a single Markdown file per project — easy to read, edit, and version control.</sub>
+</p>
 
 ## Features
 
