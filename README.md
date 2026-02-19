@@ -4,7 +4,12 @@
 
 A lightweight task management panel for VS Code, Cursor, and other VS Code-based editors. Track tasks across multiple projects using simple Markdown files with JSON frontmatter.
 
-Designed to work seamlessly with AI coding assistants — any tool that can read and write files can manage your tasks automatically.
+Designed to work seamlessly with AI coding assistants — any tool that can read and write files can manage your tasks automatically. Just ask naturally:
+
+- *"Can you create a task for fixing the login bug?"*
+- *"Check my tasks and pick up the next one"*
+- *"Mark the auth task as done and add a new one for writing tests"*
+- *"What's left to do on this project?"*
 
 <img src="https://raw.githubusercontent.com/joeprinciples/AI-Task-Manager/main/screenshots/1.png" alt="Task panel in its own sidebar window" width="650" />
 <br><sub>Tasks appear in a dedicated sidebar panel, giving you an overview of all your projects at a glance.</sub>
@@ -75,19 +80,6 @@ Not displayed in the UI.
 3. Create task files manually or let your AI assistant manage them
 4. Right-click any task to change status, priority, or remove it
 5. Click the `+` button to add tasks directly from the panel
-
-## Using with AI
-
-Because tasks are just Markdown files, any AI assistant that can read and write files will work out of the box. Just ask it naturally:
-
-- *"Can you create a task for fixing the login bug?"*
-- *"Check my tasks and pick up the next one"*
-- *"Mark the auth task as done and add a new one for writing tests"*
-- *"What's left to do on this project?"*
-
-The AI reads your task file, understands the JSON frontmatter, and edits it directly. The extension picks up changes instantly — no extra setup needed.
-
-> **Tip:** Add project context in the Markdown body below the frontmatter. AI assistants can use this to understand your tech stack, architecture, and conventions.
 
 ## Requirements
 
