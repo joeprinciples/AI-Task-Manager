@@ -144,6 +144,20 @@ export function setTaskStatus(filePath: string, taskId: string, newStatus: Task[
   return project;
 }
 
+export function clearDoneTasks(filePath: string): ProjectFile | null {
+  const project = parseTaskFile(filePath);
+  if (project.parseError) {
+    return null;
+  }
+  const before = project.data.tasks.length;
+  project.data.tasks = project.data.tasks.filter(t => t.status !== 'done');
+  if (project.data.tasks.length === before) {
+    return null; // nothing changed
+  }
+  saveTaskFile(project);
+  return project;
+}
+
 export function getActiveTask(project: ProjectFile): Task | null {
   return project.data.tasks.find(t => t.status === 'doing') || null;
 }
@@ -152,6 +166,55 @@ export function getTaskStats(project: ProjectFile): { done: number; total: numbe
   const total = project.data.tasks.length;
   const done = project.data.tasks.filter(t => t.status === 'done').length;
   return { done, total };
+}
+
+// Scaffolds a new task file for a workspace, auto-detecting project name
+export async function scaffoldProjectFile(tasksFolder: string, workspacePath: string): Promise<string | null> {
+  let projectName = path.basename(workspacePath);
+
+  // Try to pull a nicer name from package.json
+  const pkgPath = path.join(workspacePath, 'package.json');
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    if (pkg.name && typeof pkg.name === 'string') {
+      // Convert slug to title case: "my-cool-project" → "My Cool Project"
+      projectName = pkg.name
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (c: string) => c.toUpperCase());
+    }
+  } catch {
+    // No package.json or invalid — use folder name
+  }
+
+  // Slugify for the filename: "My Cool Project" → "my-cool-project.md"
+  const slug = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  let fileName = `${slug}.md`;
+
+  // Avoid collisions
+  let counter = 1;
+  while (fs.existsSync(path.join(tasksFolder, fileName))) {
+    fileName = `${slug}-${counter}.md`;
+    counter++;
+  }
+
+  const now = new Date().toISOString();
+  const content = `---
+{
+  "projectName": "${projectName}",
+  "projectPath": "${workspacePath.replace(/\\/g, '/')}",
+  "tasks": []
+}
+---
+
+## Project Context
+
+Add project context here: tech stack, architecture, key directories.
+This is not displayed in the task panel — it exists as context for AI assistants.
+`;
+
+  const filePath = path.join(tasksFolder, fileName);
+  fs.writeFileSync(filePath, content, 'utf-8');
+  return filePath;
 }
 
 // Watches the tasks folder for any .md file changes

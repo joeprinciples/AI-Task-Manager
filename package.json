@@ -32,6 +32,10 @@
       {
         "command": "aiTaskManager.toggle",
         "title": "Toggle AI Task Manager"
+      },
+      {
+        "command": "aiTaskManager.initProject",
+        "title": "AI Task Manager: Init Project"
       }
     ],
     "configuration": {
@@ -44,7 +48,7 @@
         },
         "aiTaskManager.autoCheckTasks": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "When enabled, AI agents will automatically read your task file at the start of every session to check what's in progress"
         }
       }
