@@ -6,13 +6,17 @@ A lightweight task management panel for VS Code, Cursor, and other VS Code-based
 
 Designed to work seamlessly with AI coding assistants — any tool that can read and write files can manage your tasks automatically.
 
-![Multi-project overview](screenshots/1.png)
+![Task panel in its own sidebar window](screenshots/1.png)
+*Tasks appear in a dedicated sidebar panel, giving you an overview of all your projects at a glance.*
 
-![Expanded task list with priorities and timestamps](screenshots/2.png)
+![Expanded project task list](screenshots/2.png)
+*Select a project to expand its full task list — with statuses, priorities, and timestamps.*
 
-![Right-click context menu for status, priority, and removal](screenshots/3.png)
+![Right-click context menu](screenshots/3.png)
+*Right-click any task to change its status, update its priority, or remove it.*
 
-![Simple Markdown file format with JSON frontmatter](screenshots/4.png)
+![Markdown file format](screenshots/4.png)
+*All task data lives in a single Markdown file per project — easy to read, edit, and version control.*
 
 ## Features
 
