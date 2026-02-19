@@ -5,13 +5,11 @@
   let projects = [];
   let expandedProjects = new Set();
   let hiddenDoneProjects = new Set();
-  let panelCollapsed = false;
 
   const tableBody = document.getElementById('tableBody');
-  const panelContent = document.getElementById('panelContent');
+  const summaryBar = document.getElementById('summaryBar');
+  const titleText = document.getElementById('titleText');
   const settingsBtn = document.getElementById('settingsBtn');
-  const closeBtn = document.getElementById('closeBtn');
-  const titleText = document.querySelector('.title-text');
 
   // Inline SVGs so we don't need a CDN or icon font
   const icons = {
@@ -216,22 +214,20 @@
     const list = document.createElement('div');
     list.className = 'task-history-list';
 
-    const ROW_HEIGHT = 32;
     const visibleTasks = doneHidden ? activeTasks : allTasks;
 
-    if (visibleTasks.length * ROW_HEIGHT > 400) {
-      list.style.height = '400px';
-      list.style.overflowY = 'auto';
-    }
     for (const task of visibleTasks) {
       list.appendChild(createTaskRow(task, project.filePath));
     }
     container.appendChild(list);
 
-    // Done toggle
+    // Done toggle + clear
     if (doneTasks.length > 0) {
-      const toggle = document.createElement('div');
-      toggle.className = 'done-toggle';
+      const footer = document.createElement('div');
+      footer.className = 'done-toggle';
+
+      const toggle = document.createElement('span');
+      toggle.className = 'done-toggle-link';
       toggle.textContent = doneHidden
         ? `Show ${doneTasks.length} completed`
         : `Hide completed`;
@@ -243,7 +239,19 @@
         }
         renderProjects();
       });
-      container.appendChild(toggle);
+
+      if (!doneHidden) {
+        const clear = document.createElement('span');
+        clear.className = 'done-toggle-link';
+        clear.textContent = 'Clear done';
+        clear.addEventListener('click', () => {
+          vscode.postMessage({ type: 'clearDone', filePath: project.filePath, count: doneTasks.length });
+        });
+        footer.appendChild(clear);
+      }
+
+      footer.appendChild(toggle);
+      container.appendChild(footer);
     }
 
     return container;
@@ -379,17 +387,33 @@
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  titleText.addEventListener('click', () => {
-    panelCollapsed = !panelCollapsed;
-    panelContent.classList.toggle('collapsed', panelCollapsed);
-  });
+  function updateTitleBar() {
+    const projectCount = projects.filter(p => !p.parseError).length;
+    const taskCount = projects.reduce((sum, p) => sum + (p.parseError ? 0 : p.data.tasks.length), 0);
+    const parts = [];
+    parts.push(`${projectCount} Project${projectCount !== 1 ? 's' : ''}`);
+    parts.push(`${taskCount} Task${taskCount !== 1 ? 's' : ''}`);
+    titleText.textContent = parts.join('  \u00b7  ');
+  }
+
+  function updateSummaryBar() {
+    const projectCount = projects.filter(p => !p.parseError).length;
+    const allTasks = projects.flatMap(p => p.parseError ? [] : p.data.tasks);
+    const doing = allTasks.filter(t => t.status === 'doing').length;
+    const todo = allTasks.filter(t => t.status === 'todo').length;
+    const done = allTasks.filter(t => t.status === 'done').length;
+
+    const parts = [];
+    parts.push(`${projectCount} project${projectCount !== 1 ? 's' : ''}`);
+    if (doing > 0) parts.push(`${doing} active`);
+    if (todo > 0) parts.push(`${todo} pending`);
+    if (done > 0) parts.push(`${done} done`);
+
+    summaryBar.textContent = parts.join('  \u00b7  ');
+  }
 
   settingsBtn.addEventListener('click', () => {
     vscode.postMessage({ type: 'openSettings' });
-  });
-
-  closeBtn.addEventListener('click', () => {
-    vscode.postMessage({ type: 'togglePanel' });
   });
 
   window.addEventListener('message', (event) => {
@@ -397,8 +421,12 @@
     if (message.type === 'update') {
       projects = message.projects || [];
       renderProjects();
+      updateTitleBar();
+      updateSummaryBar();
     }
   });
 
   renderProjects();
+  updateTitleBar();
+  updateSummaryBar();
 })();

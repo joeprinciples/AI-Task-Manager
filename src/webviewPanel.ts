@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ProjectFile } from './types';
-import { deleteTask, setTaskStatus, setTaskPriority, addTask } from './taskDataProvider';
+import { deleteTask, setTaskStatus, setTaskPriority, addTask, clearDoneTasks } from './taskDataProvider';
 
 export class TaskManagerPanel {
   public static currentPanel: TaskManagerPanel | undefined;
@@ -10,6 +10,7 @@ export class TaskManagerPanel {
   private _disposables: vscode.Disposable[] = [];
   private _onDidDeleteTask: ((filePath: string) => void) | undefined;
   private _onDidUpdateTask: ((filePath: string) => void) | undefined;
+  private _onDidBecomeVisible: (() => void) | undefined;
 
   public static createOrShow(extensionUri: vscode.Uri): TaskManagerPanel {
     if (TaskManagerPanel.currentPanel) {
@@ -41,12 +42,25 @@ export class TaskManagerPanel {
     this._onDidUpdateTask = cb;
   }
 
+  public onDidBecomeVisible(cb: () => void): void {
+    this._onDidBecomeVisible = cb;
+  }
+
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel;
     this._extensionUri = extensionUri;
 
     this._panel.webview.html = this._getWebviewContent();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+    this._panel.onDidChangeViewState(
+      (e) => {
+        if (e.webviewPanel.visible && this._onDidBecomeVisible) {
+          this._onDidBecomeVisible();
+        }
+      },
+      null,
+      this._disposables
+    );
     this._panel.webview.onDidReceiveMessage(
       (message) => this._handleMessage(message),
       null,
@@ -85,9 +99,6 @@ export class TaskManagerPanel {
       case 'openSettings':
         vscode.commands.executeCommand('workbench.action.openSettings', 'aiTaskManager');
         break;
-      case 'togglePanel':
-        this._panel.dispose();
-        break;
       case 'setStatus': {
         const updated = setTaskStatus(message.filePath, message.taskId, message.status);
         if (updated && this._onDidUpdateTask) {
@@ -107,6 +118,21 @@ export class TaskManagerPanel {
         if (updated && this._onDidUpdateTask) {
           this._onDidUpdateTask(message.filePath);
         }
+        break;
+      }
+      case 'clearDone': {
+        const count = message.count || 0;
+        const label = count === 1 ? '1 completed task' : `${count} completed tasks`;
+        vscode.window.showWarningMessage(
+          `Remove ${label}?`, 'Remove', 'Cancel'
+        ).then(choice => {
+          if (choice === 'Remove') {
+            const cleared = clearDoneTasks(message.filePath);
+            if (cleared && this._onDidDeleteTask) {
+              this._onDidDeleteTask(message.filePath);
+            }
+          }
+        });
         break;
       }
       case 'deleteTask': {
@@ -153,36 +179,29 @@ export class TaskManagerPanel {
 </head>
 <body>
   <div class="panel-container">
-    <div class="title-bar" id="titleBar">
-      <span class="title-text">AI Task Manager</span>
-      <div class="title-actions">
-        <button class="icon-btn" id="settingsBtn" title="Settings">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
-        <button class="icon-btn" id="closeBtn" title="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+    <div class="title-bar">
+      <span class="title-text" id="titleText">AI Tasks</span>
+      <button class="icon-btn" id="settingsBtn" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
-    <div class="panel-content" id="panelContent">
-      <div class="table-header">
-        <div class="col-status">Status</div>
-        <div class="col-task">Task</div>
-        <div class="col-project">Project</div>
-        <div class="col-document">Document</div>
-        <div class="col-progress"></div>
-        <div class="col-expand"></div>
+    <div class="table-header">
+      <div class="col-status">Status</div>
+      <div class="col-task">Task</div>
+      <div class="col-project">Project</div>
+      <div class="col-document">File</div>
+      <div class="col-progress header-icon" title="Progress">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
       </div>
-      <div class="table-body" id="tableBody">
-        <div class="empty-state">No projects found. Configure the tasks folder in settings.</div>
-      </div>
+      <div class="col-expand"></div>
     </div>
+    <div class="table-body" id="tableBody">
+      <div class="empty-state">No projects found. Configure the tasks folder in settings.</div>
+    </div>
+    <div class="summary-bar" id="summaryBar"></div>
   </div>
   <script nonce="${nonce}" src="${jsUri}"></script>
 </body>
