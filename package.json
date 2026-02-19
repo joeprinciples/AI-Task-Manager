@@ -2,7 +2,7 @@
   "name": "ai-task-manager",
   "displayName": "AI Task Manager",
   "description": "A task management panel for tracking tasks across projects with AI coding assistants",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "publisher": "FirstPrinciples",
   "license": "MIT WITH Commons-Clause",
   "repository": {
@@ -53,7 +53,7 @@
   "scripts": {
     "build": "node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "release": "node esbuild.js && vsce package -o builds/"
+    "release": "node release.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

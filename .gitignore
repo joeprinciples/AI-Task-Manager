@@ -3,3 +3,5 @@ dist/
 builds/
 *.vsix
 .vscode/
+.env
+release.js

@@ -76,6 +76,19 @@ Not displayed in the UI.
 4. Right-click any task to change status, priority, or remove it
 5. Click the `+` button to add tasks directly from the panel
 
+## Using with AI
+
+Because tasks are just Markdown files, any AI assistant that can read and write files will work out of the box. Just ask it naturally:
+
+- *"Can you create a task for fixing the login bug?"*
+- *"Check my tasks and pick up the next one"*
+- *"Mark the auth task as done and add a new one for writing tests"*
+- *"What's left to do on this project?"*
+
+The AI reads your task file, understands the JSON frontmatter, and edits it directly. The extension picks up changes instantly — no extra setup needed.
+
+> **Tip:** Add project context in the Markdown body below the frontmatter. AI assistants can use this to understand your tech stack, architecture, and conventions.
+
 ## Requirements
 
 - VS Code 1.85+ (or compatible editor: Cursor, Windsurf, VSCodium, etc.)

@@ -8,3 +8,5 @@ esbuild.js
 !icons/**
 screenshots/**
 .gitignore
+.env
+release.js
