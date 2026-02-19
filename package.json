@@ -1,0 +1,64 @@
+{
+  "name": "ai-task-manager",
+  "displayName": "AI Task Manager",
+  "description": "A task management panel for tracking tasks across projects with AI coding assistants",
+  "version": "1.0.0",
+  "publisher": "FirstPrinciples",
+  "license": "MIT WITH Commons-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joeprinciples/AI-Task-Manager.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "task",
+    "todo",
+    "project management",
+    "productivity",
+    "ai"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "icons/icon.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiTaskManager.toggle",
+        "title": "Toggle AI Task Manager"
+      }
+    ],
+    "configuration": {
+      "title": "AI Task Manager",
+      "properties": {
+        "aiTaskManager.tasksFolder": {
+          "type": "string",
+          "default": "~/.ai-tasks",
+          "description": "Path to folder containing task .md files"
+        },
+        "aiTaskManager.autoCheckTasks": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, AI agents will automatically read your task file at the start of every session to check what's in progress"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "release": "node esbuild.js && vsce package -o builds/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  }
+}
