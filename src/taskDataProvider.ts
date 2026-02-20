@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { jsonrepair } from 'jsonrepair';
 import { ProjectFile, ProjectData, Task } from './types';
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1 MB
@@ -37,10 +38,18 @@ export function parseTaskFile(filePath: string): ProjectFile {
     const markdownBody = frontmatterMatch[2].trim();
 
     let data: ProjectData;
+    let repaired = false;
     try {
       data = JSON.parse(jsonStr);
-    } catch (jsonErr: any) {
-      return errorEntry(filePath, `Invalid JSON in frontmatter: ${jsonErr.message}`);
+    } catch {
+      // Attempt to repair broken JSON (missing commas, trailing commas, etc.)
+      try {
+        const fixed = jsonrepair(jsonStr);
+        data = JSON.parse(fixed);
+        repaired = true;
+      } catch (repairErr: any) {
+        return errorEntry(filePath, `Invalid JSON in frontmatter (repair failed): ${repairErr.message}`);
+      }
     }
 
     if (!data.projectName || typeof data.projectName !== 'string') {
@@ -50,7 +59,14 @@ export function parseTaskFile(filePath: string): ProjectFile {
       return errorEntry(filePath, 'Missing or invalid "tasks" array in frontmatter');
     }
 
-    return { filePath, fileName, data, context: markdownBody };
+    const result: ProjectFile = { filePath, fileName, data, context: markdownBody };
+
+    // Write the repaired JSON back so the file stays clean
+    if (repaired) {
+      saveTaskFile(result);
+    }
+
+    return result;
   } catch (err: any) {
     return errorEntry(filePath, `Cannot read file: ${err.message}`);
   }
@@ -124,6 +140,21 @@ export function setTaskPriority(filePath: string, taskId: string, newPriority: T
     return null;
   }
   task.priority = newPriority;
+  task.updatedAt = new Date().toISOString();
+  saveTaskFile(project);
+  return project;
+}
+
+export function setTaskType(filePath: string, taskId: string, newType: Task['type']): ProjectFile | null {
+  const project = parseTaskFile(filePath);
+  if (project.parseError) {
+    return null;
+  }
+  const task = project.data.tasks.find(t => t.id === taskId);
+  if (!task) {
+    return null;
+  }
+  task.type = newType;
   task.updatedAt = new Date().toISOString();
   saveTaskFile(project);
   return project;

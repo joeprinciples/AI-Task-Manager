@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
-import { loadAllProjects, parseTaskFile, deleteTask, watchFolder, getActiveTask, scaffoldProjectFile } from './taskDataProvider';
+import { loadAllProjects, parseTaskFile, deleteTask, watchFolder, getActiveTask, scaffoldProjectFile, saveTaskFile } from './taskDataProvider';
 import { TaskManagerPanel } from './webviewPanel';
 import { ProjectFile } from './types';
 
@@ -15,6 +15,7 @@ let fileWatcher: vscode.FileSystemWatcher | undefined;
 let statusBarItem: vscode.StatusBarItem;
 let projectCache: ProjectFile[] = [];
 let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+let autoTrimInProgress = false;
 
 const DEBOUNCE_MS = 300;
 
@@ -86,6 +87,95 @@ function syncAutoCheckFlag(folder: string): void {
   }
 }
 
+function deployTaskHelper(tasksFolder: string, extensionPath: string): void {
+  const src = path.join(extensionPath, 'dist', 'scripts', 'task-helper.js');
+  const dest = path.join(tasksFolder, 'task-helper.js');
+
+  try {
+    if (!fs.existsSync(src)) { return; }
+    const srcContent = fs.readFileSync(src, 'utf-8');
+
+    // Only overwrite if content actually changed
+    if (fs.existsSync(dest)) {
+      const destContent = fs.readFileSync(dest, 'utf-8');
+      if (srcContent === destContent) { return; }
+    }
+
+    fs.writeFileSync(dest, srcContent, 'utf-8');
+
+    // Remove old bash version if it exists
+    const oldBash = path.join(tasksFolder, 'task-helper.sh');
+    if (fs.existsSync(oldBash)) { fs.unlinkSync(oldBash); }
+  } catch {
+    // Non-critical - don't block activation
+  }
+}
+
+function autoTrimDoneTasks(project: ProjectFile): void {
+  const config = vscode.workspace.getConfiguration('aiTaskManager');
+  const threshold = config.get<number>('autoRemoveDoneTasks', 0);
+  if (threshold <= 0) { return; }
+
+  const doneTasks = project.data.tasks
+    .map((t, i) => ({ task: t, index: i }))
+    .filter(({ task }) => task.status === 'done');
+
+  if (doneTasks.length <= threshold) { return; }
+
+  // Sort done tasks by updatedAt ascending (oldest first), remove the excess
+  doneTasks.sort((a, b) => {
+    const da = a.task.updatedAt || a.task.createdAt || '';
+    const db = b.task.updatedAt || b.task.createdAt || '';
+    return da.localeCompare(db);
+  });
+
+  const removeCount = doneTasks.length - threshold;
+  const idsToRemove = new Set(doneTasks.slice(0, removeCount).map(d => d.task.id));
+
+  project.data.tasks = project.data.tasks.filter(t => !idsToRemove.has(t.id));
+
+  autoTrimInProgress = true;
+  try {
+    saveTaskFile(project);
+  } finally {
+    // Reset after a short delay so the file watcher ignores this write
+    setTimeout(() => { autoTrimInProgress = false; }, DEBOUNCE_MS + 100);
+  }
+}
+
+// When an AI agent saves a file it often guesses timestamps (or uses midnight).
+// Compare against cached state and stamp real times on anything that changed.
+function fixTimestamps(updated: ProjectFile, cached: ProjectFile | undefined): boolean {
+  const now = new Date().toISOString();
+  let changed = false;
+
+  for (const task of updated.data.tasks) {
+    const old = cached?.data.tasks.find(t => t.id === task.id);
+
+    if (!old) {
+      // New task - stamp both times
+      task.createdAt = now;
+      task.updatedAt = now;
+      changed = true;
+    } else if (old.status !== task.status || old.title !== task.title || old.priority !== task.priority) {
+      // Something changed - stamp updatedAt
+      task.updatedAt = now;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    autoTrimInProgress = true;
+    try {
+      saveTaskFile(updated);
+    } finally {
+      setTimeout(() => { autoTrimInProgress = false; }, DEBOUNCE_MS + 100);
+    }
+  }
+
+  return changed;
+}
+
 // No point sending the full markdown body to the webview - it's never displayed
 function stripContextForWebview(projects: ProjectFile[]): ProjectFile[] {
   return projects.map(p => ({ ...p, context: '' }));
@@ -99,6 +189,8 @@ function fullReload(): void {
 
 // Only re-parse the file that actually changed instead of reloading everything
 function reloadSingleFile(changedUri: vscode.Uri): void {
+  if (autoTrimInProgress) { return; }
+
   const filePath = changedUri.fsPath;
   const normalizedFilePath = normalizePath(filePath);
 
@@ -113,6 +205,12 @@ function reloadSingleFile(changedUri: vscode.Uri): void {
 
   const updated = parseTaskFile(filePath);
   const idx = projectCache.findIndex(p => normalizePath(p.filePath) === normalizedFilePath);
+
+  if (!updated.parseError) {
+    const cached = idx >= 0 ? projectCache[idx] : undefined;
+    fixTimestamps(updated, cached);
+    autoTrimDoneTasks(updated);
+  }
 
   if (idx >= 0) {
     projectCache[idx] = updated;
@@ -444,6 +542,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Load cache on startup so the status bar shows the active task
   const folder = resolveTasksFolder();
   projectCache = loadAllProjects(folder);
+  deployTaskHelper(folder, context.extensionPath);
   updateStatusBar();
 
   // Offer to inject instructions into CLAUDE.md on first activation,
@@ -462,6 +561,14 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration('aiTaskManager.autoCheckTasks') ||
           e.affectsConfiguration('aiTaskManager.tasksFolder')) {
         syncAutoCheckFlag(resolveTasksFolder());
+      }
+      if (e.affectsConfiguration('aiTaskManager.autoRemoveDoneTasks')) {
+        for (const project of projectCache) {
+          if (!project.parseError) {
+            autoTrimDoneTasks(project);
+          }
+        }
+        pushToWebview();
       }
     })
   );

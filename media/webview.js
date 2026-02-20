@@ -240,6 +240,8 @@
         renderProjects();
       });
 
+      footer.appendChild(toggle);
+
       if (!doneHidden) {
         const clear = document.createElement('span');
         clear.className = 'done-toggle-link';
@@ -250,7 +252,6 @@
         footer.appendChild(clear);
       }
 
-      footer.appendChild(toggle);
       container.appendChild(footer);
     }
 
@@ -260,7 +261,7 @@
   // --- Context menu ---
   let contextMenu = null;
 
-  function showContextMenu(x, y, filePath, taskId, currentStatus, currentPriority) {
+  function showContextMenu(x, y, filePath, taskId, currentStatus, currentPriority, currentType) {
     hideContextMenu();
 
     contextMenu = document.createElement('div');
@@ -275,6 +276,12 @@
       { label: 'High', priority: 'high' },
       { label: 'Medium', priority: 'medium' },
       { label: 'Low', priority: 'low' },
+      { type: 'separator' },
+      { type: 'header', label: 'Type' },
+      { label: 'Bug', taskType: 'bug' },
+      { label: 'Feature', taskType: 'feature' },
+      { label: 'Task', taskType: 'task' },
+      { label: 'None', taskType: undefined },
       { type: 'separator' },
       { label: 'Remove', action: 'delete', destructive: true },
     ];
@@ -299,6 +306,7 @@
       if (item.destructive) el.classList.add('context-menu-destructive');
       if (item.status === currentStatus) el.classList.add('context-menu-active');
       if (item.priority === currentPriority) el.classList.add('context-menu-active');
+      if ('taskType' in item && item.taskType === currentType) el.classList.add('context-menu-active');
 
       el.textContent = item.label;
       el.addEventListener('click', (e) => {
@@ -310,6 +318,8 @@
           vscode.postMessage({ type: 'setStatus', filePath, taskId, status: item.status });
         } else if (item.priority) {
           vscode.postMessage({ type: 'setPriority', filePath, taskId, priority: item.priority });
+        } else if ('taskType' in item) {
+          vscode.postMessage({ type: 'setType', filePath, taskId, taskType: item.taskType });
         }
       });
 
@@ -355,19 +365,24 @@
       ? `<span class="priority-badge priority-${priority}">${priority}</span>`
       : '';
 
+    const taskType = task.type;
+    const typeBadge = (taskType === 'bug' || taskType === 'feature')
+      ? `<span class="type-badge type-${taskType}">${taskType}</span>`
+      : '';
+
     row.innerHTML = `
       <div class="task-history-status ${statusClass}">
         ${statusIcon}
         <span>${statusLabel}</span>
       </div>
-      <div class="task-history-title" title="${escapeHtml(task.title)}">${priorityBadge}${escapeHtml(task.title)}</div>
+      <div class="task-history-title" title="${escapeHtml(task.title)}">${typeBadge}${priorityBadge}${escapeHtml(task.title)}</div>
       <div class="task-history-timestamp">${formatTimestamp(task.updatedAt)}</div>
     `;
 
     row.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      showContextMenu(e.clientX, e.clientY, filePath, task.id, task.status, task.priority || 'medium');
+      showContextMenu(e.clientX, e.clientY, filePath, task.id, task.status, task.priority || 'medium', task.type);
     });
 
     return row;

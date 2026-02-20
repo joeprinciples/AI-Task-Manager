@@ -3,6 +3,8 @@ export interface Task {
   title: string;
   status: 'doing' | 'todo' | 'done';
   priority?: 'high' | 'medium' | 'low';
+  type?: 'bug' | 'feature' | 'task';
+  description?: string;
   createdAt: string;
   updatedAt: string;
   grepKeywords?: string[];

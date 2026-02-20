@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ProjectFile } from './types';
-import { deleteTask, setTaskStatus, setTaskPriority, addTask, clearDoneTasks } from './taskDataProvider';
+import { deleteTask, setTaskStatus, setTaskPriority, setTaskType, addTask, clearDoneTasks } from './taskDataProvider';
 
 export class TaskManagerPanel {
   public static currentPanel: TaskManagerPanel | undefined;
@@ -108,6 +108,13 @@ export class TaskManagerPanel {
       }
       case 'setPriority': {
         const updated = setTaskPriority(message.filePath, message.taskId, message.priority);
+        if (updated && this._onDidUpdateTask) {
+          this._onDidUpdateTask(message.filePath);
+        }
+        break;
+      }
+      case 'setType': {
+        const updated = setTaskType(message.filePath, message.taskId, message.taskType);
         if (updated && this._onDidUpdateTask) {
           this._onDidUpdateTask(message.filePath);
         }

@@ -30,9 +30,11 @@ async function build() {
   // Wipe stale assets before copying fresh ones
   cleanDir('dist/media');
   cleanDir('dist/icons');
+  cleanDir('dist/scripts');
 
   copyDir('media', 'dist/media');
   copyDir('icons', 'dist/icons');
+  copyDir('scripts', 'dist/scripts');
 
   const ctx = await esbuild.context({
     entryPoints: ['src/extension.ts'],

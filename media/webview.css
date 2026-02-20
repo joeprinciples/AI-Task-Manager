@@ -338,6 +338,26 @@ body {
   background: rgba(128, 128, 128, 0.15);
 }
 
+.type-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.type-bug {
+  color: var(--vscode-errorForeground, #f44);
+  background: rgba(244, 68, 68, 0.15);
+}
+
+.type-feature {
+  color: var(--vscode-charts-green, #388a34);
+  background: rgba(56, 138, 52, 0.15);
+}
+
 .task-history-timestamp {
   color: var(--vscode-descriptionForeground);
   font-size: 11px;

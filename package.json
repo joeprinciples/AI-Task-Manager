@@ -50,6 +50,11 @@
           "type": "boolean",
           "default": true,
           "description": "When enabled, AI agents will automatically read your task file at the start of every session to check what's in progress"
+        },
+        "aiTaskManager.autoRemoveDoneTasks": {
+          "type": "number",
+          "default": 0,
+          "description": "Automatically remove the oldest done tasks when their count exceeds this number (0 = off)"
         }
       }
     }
@@ -64,5 +69,8 @@
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "jsonrepair": "^3.13.2"
   }
 }
