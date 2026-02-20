@@ -157,7 +157,7 @@ function fixTimestamps(updated: ProjectFile, cached: ProjectFile | undefined): b
       task.createdAt = now;
       task.updatedAt = now;
       changed = true;
-    } else if (old.status !== task.status || old.title !== task.title || old.priority !== task.priority) {
+    } else if (old.status !== task.status || old.title !== task.title || old.priority !== task.priority || old.type !== task.type) {
       // Something changed - stamp updatedAt
       task.updatedAt = now;
       changed = true;
