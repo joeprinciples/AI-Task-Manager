@@ -190,12 +190,13 @@ export function clearDoneTasks(filePath: string): ProjectFile | null {
 }
 
 export function getActiveTask(project: ProjectFile): Task | null {
-  return project.data.tasks.find(t => t.status === 'doing') || null;
+  return project.data.tasks.find(t => t.status === 'doing' && !t.id.startsWith('_')) || null;
 }
 
 export function getTaskStats(project: ProjectFile): { done: number; total: number } {
-  const total = project.data.tasks.length;
-  const done = project.data.tasks.filter(t => t.status === 'done').length;
+  const visible = project.data.tasks.filter(t => !t.id.startsWith('_'));
+  const total = visible.length;
+  const done = visible.filter(t => t.status === 'done').length;
   return { done, total };
 }
 
@@ -233,7 +234,20 @@ export async function scaffoldProjectFile(tasksFolder: string, workspacePath: st
 {
   "projectName": "${projectName}",
   "projectPath": "${workspacePath.replace(/\\/g, '/')}",
-  "tasks": []
+  "tasks": [
+    {
+      "id": "_template",
+      "title": "Example: this task is hidden from the UI — use it as a reference for optional fields",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "description": "A longer description of what needs to be done, with acceptance criteria or context",
+      "createdAt": "${now}",
+      "updatedAt": "${now}",
+      "grepKeywords": ["functionName", "ClassName", "configKey"],
+      "relatedDocuments": ["src/example/file.ts", "src/utils/helper.ts"]
+    }
+  ]
 }
 ---
 

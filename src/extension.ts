@@ -48,6 +48,18 @@ function seedExampleFile(folder: string): void {
   "projectName": "Example Project",
   "tasks": [
     {
+      "id": "_template",
+      "title": "Example: this task is hidden from the UI — use it as a reference for optional fields",
+      "status": "todo",
+      "priority": "medium",
+      "type": "feature",
+      "description": "A longer description of what needs to be done, with acceptance criteria or context",
+      "createdAt": "${now}",
+      "updatedAt": "${now}",
+      "grepKeywords": ["functionName", "ClassName", "configKey"],
+      "relatedDocuments": ["src/example/file.ts", "src/utils/helper.ts"]
+    },
+    {
       "id": "t1",
       "title": "This is an example task — right-click to change status or priority",
       "status": "doing",
@@ -317,6 +329,7 @@ I use a persistent file-based task tracker at \`~/.ai-tasks/\` for cross-session
 ### Rules
 - One file per project, named descriptively (e.g. \`my-project.md\`)
 - Do NOT touch files starting with \`_\` or \`.\` — they are system files
+- Do NOT modify or delete tasks with IDs starting with \`_\` — they are system templates
 - After editing a task file, always verify the JSON frontmatter is valid. If you break it, fix it immediately.
 - \`grepKeywords\` and \`relatedDocuments\` are optional but helpful — add them when relevant
 

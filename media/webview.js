@@ -57,13 +57,14 @@
   }
 
   function getActiveTask(project) {
-    const sorted = sortTasks(project.data.tasks);
+    const sorted = sortTasks(project.data.tasks.filter(t => !t.id.startsWith('_')));
     return sorted[0] || null;
   }
 
   function getTaskStats(project) {
-    const total = project.data.tasks.length;
-    const done = project.data.tasks.filter(t => t.status === 'done').length;
+    const visible = project.data.tasks.filter(t => !t.id.startsWith('_'));
+    const total = visible.length;
+    const done = visible.filter(t => t.status === 'done').length;
     return { done, total };
   }
 
@@ -164,7 +165,7 @@
   }
 
   function createTaskHistory(project) {
-    const allTasks = sortTasks(project.data.tasks);
+    const allTasks = sortTasks(project.data.tasks.filter(t => !t.id.startsWith('_')));
     const doneTasks = allTasks.filter(t => t.status === 'done');
     const activeTasks = allTasks.filter(t => t.status !== 'done');
     const doneHidden = hiddenDoneProjects.has(project.filePath);
@@ -404,7 +405,7 @@
 
   function updateTitleBar() {
     const projectCount = projects.filter(p => !p.parseError).length;
-    const taskCount = projects.reduce((sum, p) => sum + (p.parseError ? 0 : p.data.tasks.length), 0);
+    const taskCount = projects.reduce((sum, p) => sum + (p.parseError ? 0 : p.data.tasks.filter(t => !t.id.startsWith('_')).length), 0);
     const parts = [];
     parts.push(`${projectCount} Project${projectCount !== 1 ? 's' : ''}`);
     parts.push(`${taskCount} Task${taskCount !== 1 ? 's' : ''}`);
@@ -413,7 +414,7 @@
 
   function updateSummaryBar() {
     const projectCount = projects.filter(p => !p.parseError).length;
-    const allTasks = projects.flatMap(p => p.parseError ? [] : p.data.tasks);
+    const allTasks = projects.flatMap(p => p.parseError ? [] : p.data.tasks.filter(t => !t.id.startsWith('_')));
     const doing = allTasks.filter(t => t.status === 'doing').length;
     const todo = allTasks.filter(t => t.status === 'todo').length;
     const done = allTasks.filter(t => t.status === 'done').length;
