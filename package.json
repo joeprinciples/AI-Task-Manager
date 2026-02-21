@@ -2,7 +2,7 @@
   "name": "ai-task-manager",
   "displayName": "AI Task Manager",
   "description": "A task management panel for tracking tasks across projects with AI coding assistants",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "FirstPrinciples",
   "license": "MIT WITH Commons-Clause",
   "repository": {

@@ -295,7 +295,7 @@ function setupFileWatcher(context: vscode.ExtensionContext): void {
 const CLAUDE_MD_INSTRUCTIONS = `${MARKER_START}
 ## Task Management (REQUIRED WORKFLOW)
 
-I use a persistent file-based task tracker at \`~/.ai-tasks/\`. Do NOT use built-in task tools (TaskCreate, TaskUpdate) — use this file-based system instead so that tasks persist across sessions.
+I use a persistent file-based task tracker at \`~/.ai-tasks/\` for cross-session persistence. Use your built-in task tools normally for in-session tracking, but also update the task file at \`~/.ai-tasks/\` so progress is preserved between sessions.
 
 ### Before writing any code, you MUST:
 1. Check \`~/.ai-tasks/\` for a file where \`projectPath\` matches the current working directory
