@@ -262,6 +262,17 @@ This is not displayed in the task panel — it exists as context for AI assistan
   return filePath;
 }
 
+// Updates the projectPath in an existing task file (e.g. after a folder move)
+export function updateProjectPath(filePath: string, newPath: string): ProjectFile | null {
+  const project = parseTaskFile(filePath);
+  if (project.parseError) {
+    return null;
+  }
+  project.data.projectPath = newPath.replace(/\\/g, '/');
+  saveTaskFile(project);
+  return project;
+}
+
 // Watches the tasks folder for any .md file changes
 export function watchFolder(
   folder: string,

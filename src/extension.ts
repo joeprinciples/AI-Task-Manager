@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
-import { loadAllProjects, parseTaskFile, deleteTask, watchFolder, getActiveTask, scaffoldProjectFile, saveTaskFile } from './taskDataProvider';
+import { loadAllProjects, parseTaskFile, deleteTask, watchFolder, getActiveTask, scaffoldProjectFile, saveTaskFile, updateProjectPath } from './taskDataProvider';
 import { TaskManagerPanel } from './webviewPanel';
 import { ProjectFile } from './types';
 
@@ -464,6 +464,28 @@ function hasMatchingTaskFile(workspacePath: string): boolean {
   );
 }
 
+function findMovedProjectFile(workspacePath: string): ProjectFile | null {
+  const folderName = path.basename(workspacePath).toLowerCase();
+
+  for (const p of projectCache) {
+    if (p.parseError || !p.data.projectPath) { continue; }
+
+    // Folder name must match
+    if (path.basename(p.data.projectPath).toLowerCase() !== folderName) { continue; }
+
+    // Old path must no longer exist on disk (confirms move, not a duplicate folder)
+    try {
+      fs.statSync(p.data.projectPath);
+      continue; // Old path still exists — skip
+    } catch {
+      // Old path gone — this is a likely match
+      return p;
+    }
+  }
+
+  return null;
+}
+
 async function initProjectForWorkspace(workspacePath: string): Promise<void> {
   const folder = resolveTasksFolder();
   const filePath = await scaffoldProjectFile(folder, workspacePath);
@@ -485,6 +507,32 @@ function checkWorkspaceAndPrompt(context: vscode.ExtensionContext): void {
   // Don't nag if the user already dismissed this workspace
   const dismissed: string[] = context.globalState.get(DISMISSED_WORKSPACES_KEY, []);
   if (dismissed.includes(normalizePath(workspacePath))) { return; }
+
+  // Check if this looks like a project that was moved from another location
+  const movedMatch = findMovedProjectFile(workspacePath);
+  if (movedMatch) {
+    const oldPath = movedMatch.data.projectPath!;
+    vscode.window.showInformationMessage(
+      `"${movedMatch.data.projectName}" looks like it moved here from ${oldPath}. Update the task file?`,
+      'Update',
+      'Create new',
+      'Dismiss'
+    ).then(choice => {
+      if (choice === 'Update') {
+        const updated = updateProjectPath(movedMatch.filePath, workspacePath);
+        if (updated) {
+          reloadSingleFile(vscode.Uri.file(movedMatch.filePath));
+          vscode.window.showInformationMessage(`Task file updated to point to ${workspacePath}`);
+        }
+      } else if (choice === 'Create new') {
+        initProjectForWorkspace(workspacePath);
+      } else if (choice === 'Dismiss') {
+        dismissed.push(normalizePath(workspacePath));
+        context.globalState.update(DISMISSED_WORKSPACES_KEY, dismissed);
+      }
+    });
+    return;
+  }
 
   vscode.window.showInformationMessage(
     `No task file found for this workspace. Create one?`,
