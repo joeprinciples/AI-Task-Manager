@@ -5,3 +5,4 @@ builds/
 .vscode/
 .env
 release.js
+.claude/settings.local.json

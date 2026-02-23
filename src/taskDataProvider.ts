@@ -230,32 +230,26 @@ export async function scaffoldProjectFile(tasksFolder: string, workspacePath: st
   }
 
   const now = new Date().toISOString();
-  const content = `---
-{
-  "projectName": "${projectName}",
-  "projectPath": "${workspacePath.replace(/\\/g, '/')}",
-  "tasks": [
-    {
-      "id": "_template",
-      "title": "Example: this task is hidden from the UI — use it as a reference for optional fields",
-      "status": "todo",
-      "priority": "medium",
-      "type": "feature",
-      "description": "A longer description of what needs to be done, with acceptance criteria or context",
-      "createdAt": "${now}",
-      "updatedAt": "${now}",
-      "grepKeywords": ["functionName", "ClassName", "configKey"],
-      "relatedDocuments": ["src/example/file.ts", "src/utils/helper.ts"]
-    }
-  ]
-}
----
-
-## Project Context
-
-Add project context here: tech stack, architecture, key directories.
-This is not displayed in the task panel — it exists as context for AI assistants.
-`;
+  const data = {
+    projectName,
+    projectPath: workspacePath.replace(/\\/g, '/'),
+    tasks: [
+      {
+        id: '_template',
+        title: 'Example: this task is hidden from the UI — use it as a reference for optional fields',
+        status: 'todo',
+        priority: 'medium',
+        type: 'feature',
+        description: 'A longer description of what needs to be done, with acceptance criteria or context',
+        createdAt: now,
+        updatedAt: now,
+        grepKeywords: ['functionName', 'ClassName', 'configKey'],
+        relatedDocuments: ['src/example/file.ts', 'src/utils/helper.ts'],
+      },
+    ],
+  };
+  const json = JSON.stringify(data, null, 2);
+  const content = `---\n${json}\n---\n\n## Project Context\n\nAdd project context here: tech stack, architecture, key directories.\nThis is not displayed in the task panel — it exists as context for AI assistants.\n`;
 
   const filePath = path.join(tasksFolder, fileName);
   fs.writeFileSync(filePath, content, 'utf-8');

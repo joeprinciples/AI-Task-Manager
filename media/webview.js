@@ -69,7 +69,9 @@
   }
 
   function formatTimestamp(isoStr) {
+    if (!isoStr) { return '—'; }
     const d = new Date(isoStr);
+    if (isNaN(d.getTime())) { return '—'; }
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);

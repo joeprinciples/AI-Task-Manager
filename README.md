@@ -54,6 +54,7 @@ They're session-scoped. Close the terminal, everything's gone. This persists to 
 |---------|---------|-------------|
 | `aiTaskManager.tasksFolder` | `~/.ai-tasks` | Folder containing task files |
 | `aiTaskManager.autoCheckTasks` | `true` | AI auto-reads tasks at session start |
+| `aiTaskManager.autoRemoveDoneTasks` | `0` | Auto-remove oldest done tasks when count exceeds this (0 = off) |
 
 ## Commands
 

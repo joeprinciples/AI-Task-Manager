@@ -123,16 +123,18 @@ function deployTaskHelper(tasksFolder: string, extensionPath: string): void {
   }
 }
 
-function autoTrimDoneTasks(project: ProjectFile): void {
+// Trims oldest done tasks if count exceeds threshold. Mutates project in place.
+// Returns true if tasks were removed.
+function autoTrimDoneTasks(project: ProjectFile): boolean {
   const config = vscode.workspace.getConfiguration('aiTaskManager');
   const threshold = config.get<number>('autoRemoveDoneTasks', 0);
-  if (threshold <= 0) { return; }
+  if (threshold <= 0) { return false; }
 
   const doneTasks = project.data.tasks
     .map((t, i) => ({ task: t, index: i }))
     .filter(({ task }) => task.status === 'done');
 
-  if (doneTasks.length <= threshold) { return; }
+  if (doneTasks.length <= threshold) { return false; }
 
   // Sort done tasks by updatedAt ascending (oldest first), remove the excess
   doneTasks.sort((a, b) => {
@@ -145,18 +147,12 @@ function autoTrimDoneTasks(project: ProjectFile): void {
   const idsToRemove = new Set(doneTasks.slice(0, removeCount).map(d => d.task.id));
 
   project.data.tasks = project.data.tasks.filter(t => !idsToRemove.has(t.id));
-
-  autoTrimInProgress = true;
-  try {
-    saveTaskFile(project);
-  } finally {
-    // Reset after a short delay so the file watcher ignores this write
-    setTimeout(() => { autoTrimInProgress = false; }, DEBOUNCE_MS + 100);
-  }
+  return true;
 }
 
 // When an AI agent saves a file it often guesses timestamps (or uses midnight).
 // Compare against cached state and stamp real times on anything that changed.
+// Mutates project in place. Returns true if timestamps were fixed.
 function fixTimestamps(updated: ProjectFile, cached: ProjectFile | undefined): boolean {
   const now = new Date().toISOString();
   let changed = false;
@@ -169,23 +165,25 @@ function fixTimestamps(updated: ProjectFile, cached: ProjectFile | undefined): b
       task.createdAt = now;
       task.updatedAt = now;
       changed = true;
-    } else if (old.status !== task.status || old.title !== task.title || old.priority !== task.priority || old.type !== task.type) {
+    } else if (old.status !== task.status || old.title !== task.title || old.priority !== task.priority || old.type !== task.type || old.description !== task.description || JSON.stringify(old.grepKeywords) !== JSON.stringify(task.grepKeywords) || JSON.stringify(old.relatedDocuments) !== JSON.stringify(task.relatedDocuments)) {
       // Something changed - stamp updatedAt
       task.updatedAt = now;
       changed = true;
     }
   }
 
-  if (changed) {
-    autoTrimInProgress = true;
-    try {
-      saveTaskFile(updated);
-    } finally {
-      setTimeout(() => { autoTrimInProgress = false; }, DEBOUNCE_MS + 100);
-    }
-  }
-
   return changed;
+}
+
+// Single write after both fixTimestamps and autoTrimDoneTasks mutate the project
+function saveIfDirty(project: ProjectFile, dirty: boolean): void {
+  if (!dirty) { return; }
+  autoTrimInProgress = true;
+  try {
+    saveTaskFile(project);
+  } finally {
+    setTimeout(() => { autoTrimInProgress = false; }, DEBOUNCE_MS + 100);
+  }
 }
 
 // No point sending the full markdown body to the webview - it's never displayed
@@ -220,8 +218,9 @@ function reloadSingleFile(changedUri: vscode.Uri): void {
 
   if (!updated.parseError) {
     const cached = idx >= 0 ? projectCache[idx] : undefined;
-    fixTimestamps(updated, cached);
-    autoTrimDoneTasks(updated);
+    const timestampsFixed = fixTimestamps(updated, cached);
+    const tasksTrimmed = autoTrimDoneTasks(updated);
+    saveIfDirty(updated, timestampsFixed || tasksTrimmed);
   }
 
   if (idx >= 0) {
@@ -626,7 +625,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration('aiTaskManager.autoRemoveDoneTasks')) {
         for (const project of projectCache) {
           if (!project.parseError) {
-            autoTrimDoneTasks(project);
+            saveIfDirty(project, autoTrimDoneTasks(project));
           }
         }
         pushToWebview();

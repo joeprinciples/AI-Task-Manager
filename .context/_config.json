@@ -1,0 +1,29 @@
+{
+  "categories": [
+    "core",
+    "ui"
+  ],
+  "excludePatterns": [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    "builds",
+    ".context",
+    "coverage"
+  ],
+  "scanRoots": [
+    "src",
+    "media"
+  ],
+  "sourceExtensions": [
+    ".ts",
+    ".js",
+    ".css"
+  ],
+  "categoryMap": {
+    "src": "core",
+    "media": "ui"
+  },
+  "needsAiSetup": false
+}
